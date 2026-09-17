@@ -1325,10 +1325,11 @@ function Velvet:CreateWindow(opts)
     local pillIsIcon = resolvedToggleIcon ~= nil
     local pillH = mobile and 48 or 36
 
-    -- calc width: auto-size for text length
+    -- calc width & corner: support square and emoji text
+    local isSquarePill = opts.ToggleShape == "Square" or opts.ToggleShape == "Rectangle" or opts.SquareToggle == true
+    local cornerRadius = isSquarePill and (opts.ToggleCorner or 8) or (pillH / 2)
     local pillW = pillH -- default square
-    if not pillIsIcon and #pillText > 1 then
-        -- estimate text width + padding
+    if not pillIsIcon and not isSquarePill and #pillText > 1 then
         pillW = math.max(pillH, #pillText * (mobile and 11 or 9) + (mobile and 24 or 18))
     end
 
@@ -1345,7 +1346,7 @@ function Velvet:CreateWindow(opts)
         Visible = false,
         Parent = gui
     })
-    addCorner(togglePill, pillH / 2)
+    addCorner(togglePill, cornerRadius)
     addStroke(togglePill, theme.Accent, 1, 0.3)
 
     if pillIsIcon then
@@ -1361,14 +1362,14 @@ function Velvet:CreateWindow(opts)
             Parent = togglePill
         })
     else
-        -- text mode
+        -- text / emoji mode
         create("TextLabel", {
             Size = UDim2.fromScale(1, 1),
             BackgroundTransparency = 1,
             Text = pillText,
             TextColor3 = theme.Text,
             TextSize = mobile and 16 or 13,
-            Font = Enum.Font.GothamBold,
+            Font = Enum.Font.Unknown,
             TextTruncate = Enum.TextTruncate.AtEnd,
             ZIndex = 101,
             Parent = togglePill
@@ -1643,7 +1644,7 @@ function Velvet:CreateWindow(opts)
             Text = mobile and name:sub(1, 3) or name,
             TextColor3 = theme.TextDim,
             TextSize = mobile and 9 or 12,
-            Font = Enum.Font.GothamMedium,
+            Font = Enum.Font.Unknown,
             TextXAlignment = mobile and Enum.TextXAlignment.Center or Enum.TextXAlignment.Left,
             ZIndex = 7,
             Parent = tabBtn
@@ -1833,7 +1834,7 @@ function Velvet:CreateWindow(opts)
                 Text = subName,
                 TextColor3 = theme.TextDim,
                 TextSize = 11,
-                Font = Enum.Font.GothamMedium,
+                Font = Enum.Font.Unknown,
                 ZIndex = 7,
                 Parent = subBtn,
             })
@@ -1935,7 +1936,7 @@ function Velvet:CreateWindow(opts)
                 Text = sectionName or "Section",
                 TextColor3 = theme.TextDim,
                 TextSize = 11,
-                Font = Enum.Font.GothamBold,
+                Font = Enum.Font.Unknown,
                 TextXAlignment = Enum.TextXAlignment.Left,
                 ZIndex = 7,
                 Parent = sectionHeader
@@ -2006,7 +2007,7 @@ function Velvet:CreateWindow(opts)
                     Text = opts.Text or id,
                     TextColor3 = theme.Text,
                     TextSize = 12,
-                    Font = Enum.Font.Gotham,
+                    Font = Enum.Font.Unknown,
                     TextXAlignment = Enum.TextXAlignment.Left,
                     ZIndex = 7,
                     Parent = elem
@@ -2112,7 +2113,7 @@ function Velvet:CreateWindow(opts)
                     Text = opts.Text or id,
                     TextColor3 = theme.Text,
                     TextSize = 12,
-                    Font = Enum.Font.Gotham,
+                    Font = Enum.Font.Unknown,
                     TextXAlignment = Enum.TextXAlignment.Left,
                     ZIndex = 7,
                     Parent = elem
@@ -2255,7 +2256,7 @@ function Velvet:CreateWindow(opts)
                     Text = opts.Text or "Button",
                     TextColor3 = theme.Text,
                     TextSize = 12,
-                    Font = Enum.Font.GothamMedium,
+                    Font = Enum.Font.Unknown,
                     ZIndex = 7,
                     Parent = btn
                 })
@@ -2340,7 +2341,7 @@ function Velvet:CreateWindow(opts)
                     Text = getDisplayText(),
                     TextColor3 = theme.Text,
                     TextSize = 12,
-                    Font = Enum.Font.Gotham,
+                    Font = Enum.Font.Unknown,
                     TextXAlignment = Enum.TextXAlignment.Left,
                     TextTruncate = Enum.TextTruncate.AtEnd,
                     ZIndex = 8,
@@ -2355,7 +2356,7 @@ function Velvet:CreateWindow(opts)
                         Text = opts.Text,
                         TextColor3 = theme.TextDim,
                         TextSize = 10,
-                        Font = Enum.Font.GothamMedium,
+                        Font = Enum.Font.Unknown,
                         TextXAlignment = Enum.TextXAlignment.Left,
                         ZIndex = 7,
                         Parent = elem
@@ -2377,98 +2378,90 @@ function Velvet:CreateWindow(opts)
                 -- dropdown list
                 local dropFrame = create("Frame", {
                     Size = UDim2.new(1, 0, 0, 0),
-                    Position = UDim2.new(0, 0, 0, headerY + (mobile and 42 or 36)),
-                    BackgroundColor3 = theme.Surface,
-                    BackgroundTransparency = 0.05,
+                    Position = UDim2.new(0, 0, 0, elemH + 4),
+                    BackgroundColor3 = theme.Panel,
+                    BorderSizePixel = 0,
                     ClipsDescendants = true,
                     Visible = false,
-                    ZIndex = 20,
+                    ZIndex = 50,
                     Parent = elem
                 })
-                addCorner(dropFrame, 6)
+                addCorner(dropFrame, 8)
                 addStroke(dropFrame, theme.Border, 1, 0.4)
 
-                local dropList = create("ScrollingFrame", {
+                local dropScroll = create("ScrollingFrame", {
                     Size = UDim2.fromScale(1, 1),
                     BackgroundTransparency = 1,
                     ScrollBarThickness = 2,
                     ScrollBarImageColor3 = theme.Accent,
                     CanvasSize = UDim2.new(0, 0, 0, 0),
                     AutomaticCanvasSize = Enum.AutomaticSize.Y,
-                    ZIndex = 21,
+                    ZIndex = 51,
                     Parent = dropFrame,
                     Children = {
-                        create("UIListLayout", {
-                            SortOrder = Enum.SortOrder.LayoutOrder,
-                            Padding = UDim.new(0, 1),
-                        }),
-                        create("UIPadding", {
-                            PaddingTop = UDim.new(0, 3),
-                            PaddingBottom = UDim.new(0, 3),
-                            PaddingLeft = UDim.new(0, 4),
-                            PaddingRight = UDim.new(0, 4),
-                        })
+                        create("UIListLayout", { SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 2) }),
+                        create("UIPadding", { PaddingTop = UDim.new(0, 4), PaddingBottom = UDim.new(0, 4), PaddingLeft = UDim.new(0, 4), PaddingRight = UDim.new(0, 4) })
                     }
                 })
 
                 local open = false
 
-                local function refreshItems()
-                    for _, c in dropList:GetChildren() do
+                local function refreshOptions()
+                    for _, c in dropScroll:GetChildren() do
                         if c:IsA("TextButton") then c:Destroy() end
                     end
 
-                    for _, val in values do
-                        local isSelected = multi and selected[val] or (selected == val)
-                        local item = create("TextButton", {
-                            Size = UDim2.new(1, 0, 0, mobile and 32 or 26),
-                            BackgroundColor3 = isSelected and theme.Accent or theme.Panel,
-                            BackgroundTransparency = isSelected and 0.6 or 0.8,
+                    for idx, item in values do
+                        local itemBtn = create("TextButton", {
+                            Size = UDim2.new(1, 0, 0, 28),
+                            BackgroundColor3 = theme.Surface,
+                            BackgroundTransparency = 1,
                             Text = "",
                             BorderSizePixel = 0,
                             AutoButtonColor = false,
-                            ZIndex = 22,
-                            Parent = dropList
+                            ZIndex = 52,
+                            Parent = dropScroll
                         })
-                        addCorner(item, 4)
+                        addCorner(itemBtn, 4)
 
-                        create("TextLabel", {
-                            Size = UDim2.new(1, -10, 1, 0),
+                        local isSel = multi and (selected[item] == true) or (selected == item)
+
+                        local itemLbl = create("TextLabel", {
+                            Size = UDim2.new(1, -16, 1, 0),
                             Position = UDim2.new(0, 8, 0, 0),
                             BackgroundTransparency = 1,
-                            Text = tostring(val),
-                            TextColor3 = isSelected and theme.Text or theme.TextDim,
-                            TextSize = 12,
-                            Font = Enum.Font.Gotham,
+                            Text = tostring(item),
+                            TextColor3 = isSel and theme.Accent or theme.TextDim,
+                            TextSize = 11,
+                            Font = Enum.Font.Unknown,
                             TextXAlignment = Enum.TextXAlignment.Left,
-                            ZIndex = 23,
-                            Parent = item
+                            ZIndex = 53,
+                            Parent = itemBtn
                         })
 
-                        item.MouseEnter:Connect(function()
-                            tween(item, {BackgroundTransparency = 0.5}, 0.1)
+                        itemBtn.MouseEnter:Connect(function()
+                            tween(itemBtn, {BackgroundTransparency = 0.5}, 0.1)
                         end)
-                        item.MouseLeave:Connect(function()
-                            local sel = multi and selected[val] or (selected == val)
-                            tween(item, {BackgroundTransparency = sel and 0.6 or 0.8}, 0.1)
+                        itemBtn.MouseLeave:Connect(function()
+                            tween(itemBtn, {BackgroundTransparency = 1}, 0.1)
                         end)
 
-                        item.MouseButton1Click:Connect(function()
+                        itemBtn.MouseButton1Click:Connect(function()
                             if multi then
-                                selected[val] = not selected[val]
+                                selected[item] = not selected[item]
+                                itemLbl.TextColor3 = selected[item] and theme.Accent or theme.TextDim
                             else
-                                selected = val
-                                -- close
+                                selected = item
                                 open = false
-                                tween(dropFrame, {Size = UDim2.new(1, 0, 0, 0)}, 0.2)
-                                task.delay(0.2, function() dropFrame.Visible = false end)
-                                tween(dropArrow, {Rotation = 0}, 0.15)
+                                tween(dropFrame, {Size = UDim2.new(1, 0, 0, 0)}, 0.18)
+                                tween(dropArrow, {Rotation = 0}, 0.18)
+                                task.delay(0.18, function() dropFrame.Visible = false end)
+                                refreshOptions()
                             end
                             headerLabel.Text = getDisplayText()
-                            Velvet.Flags[id] = multi and selected or selected
-                            fireListeners(id, multi and selected or selected)
-                            refreshItems()
-                            safecall(`Dropdown:{id}`, cb, multi and selected or selected)
+                            Velvet.Flags[id] = selected
+                            fireListeners(id, selected)
+                            safecall(`Dropdown:{id}`, cb, selected)
                         end)
                     end
                 end
@@ -2476,33 +2469,33 @@ function Velvet:CreateWindow(opts)
                 header.MouseButton1Click:Connect(function()
                     open = not open
                     if open then
-                        refreshItems()
+                        refreshOptions()
+                        local listH = math.min(#values * 30 + 8, 160)
                         dropFrame.Visible = true
-                        local itemH = mobile and 32 or 26
-                        local h = math.min(#values * (itemH + 1) + 8, 180)
-                        tween(dropFrame, {Size = UDim2.new(1, 0, 0, h)}, 0.2)
-                        tween(dropArrow, {Rotation = 180}, 0.15)
+                        tween(dropFrame, {Size = UDim2.new(1, 0, 0, listH)}, 0.22)
+                        tween(dropArrow, {Rotation = 180}, 0.22)
                     else
-                        tween(dropFrame, {Size = UDim2.new(1, 0, 0, 0)}, 0.2)
-                        task.delay(0.2, function() dropFrame.Visible = false end)
-                        tween(dropArrow, {Rotation = 0}, 0.15)
+                        tween(dropFrame, {Size = UDim2.new(1, 0, 0, 0)}, 0.18)
+                        tween(dropArrow, {Rotation = 0}, 0.18)
+                        task.delay(0.18, function() dropFrame.Visible = false end)
                     end
                 end)
 
-                Velvet.Flags[id] = selected
-                refreshItems()
+                refreshOptions()
 
-                local dropdown = { Value = selected }
+                local dropdown = {
+                    Value = selected,
+                    SetValues = function(self, newVals)
+                        values = newVals
+                        refreshOptions()
+                    end
+                }
                 function dropdown:Set(v)
                     selected = v
                     headerLabel.Text = getDisplayText()
+                    refreshOptions()
                     Velvet.Flags[id] = selected
                     fireListeners(id, selected)
-                    refreshItems()
-                end
-                function dropdown:Refresh(newValues)
-                    values = newValues
-                    refreshItems()
                 end
                 function dropdown:Get() return selected end
 
@@ -2510,1137 +2503,29 @@ function Velvet:CreateWindow(opts)
                 setupVisibility(dropdown, elem, opts)
                 setupTooltip(elem, opts)
                 tagSearch(elem, opts.Text or id)
+
                 Velvet._elements[id] = dropdown
                 table.insert(section.Elements, dropdown)
                 return dropdown
             end
 
-            -- ===
-            -- INPUT
-            -- ===
-            function section:AddInput(id, opts)
-                opts = opts or {}
-                local value = opts.Default or ""
-                local cb = opts.Callback or function() end
-
-                local elem = create("Frame", {
-                    Size = UDim2.new(1, 0, 0, mobile and 56 or 48),
-                    BackgroundTransparency = 1,
-                    ZIndex = 6,
-                    Parent = elemContainer
-                })
-
-                if opts.Text then
-                    create("TextLabel", {
-                        Size = UDim2.new(1, 0, 0, 14),
-                        BackgroundTransparency = 1,
-                        Text = opts.Text,
-                        TextColor3 = theme.TextDim,
-                        TextSize = 10,
-                        Font = Enum.Font.GothamMedium,
-                        TextXAlignment = Enum.TextXAlignment.Left,
-                        ZIndex = 7,
-                        Parent = elem
-                    })
-                end
-
-                local inputBg = create("Frame", {
-                    Size = UDim2.new(1, 0, 0, mobile and 36 or 30),
-                    Position = UDim2.new(0, 0, 1, mobile and -36 or -30),
-                    BackgroundColor3 = theme.Surface,
-                    BorderSizePixel = 0,
-                    ZIndex = 7,
-                    Parent = elem
-                })
-                addCorner(inputBg, 6)
-                local inputStroke = addStroke(inputBg, theme.Border, 1, 0.5)
-
-                local textBox = create("TextBox", {
-                    Size = UDim2.new(1, -16, 1, 0),
-                    Position = UDim2.new(0, 8, 0, 0),
-                    BackgroundTransparency = 1,
-                    Text = value,
-                    PlaceholderText = opts.Placeholder or "Type here...",
-                    TextColor3 = theme.Text,
-                    PlaceholderColor3 = theme.TextMuted,
-                    TextSize = 12,
-                    Font = Enum.Font.Code,
-                    TextXAlignment = Enum.TextXAlignment.Left,
-                    ClearTextOnFocus = false,
-                    ZIndex = 8,
-                    Parent = inputBg
-                })
-
-                textBox.Focused:Connect(function()
-                    tween(inputStroke, {Color = theme.Accent, Transparency = 0}, 0.15)
-                end)
-                textBox.FocusLost:Connect(function(enterPressed)
-                    tween(inputStroke, {Color = theme.Border, Transparency = 0.5}, 0.15)
-                    value = textBox.Text
-                    Velvet.Flags[id] = value
-                    fireListeners(id, value)
-                    safecall(`Input:{id}`, cb, value, enterPressed)
-                end)
-
-                Velvet.Flags[id] = value
-
-                local input = { Value = value }
-                function input:Set(v)
-                    textBox.Text = v
-                    value = v
-                    Velvet.Flags[id] = v
-                    fireListeners(id, v)
-                end
-                function input:Get() return value end
-
-                attachOnChanged(input, id)
-                setupVisibility(input, elem, opts)
-                setupTooltip(elem, opts)
-                tagSearch(elem, opts.Text or id)
-                Velvet._elements[id] = input
-                table.insert(section.Elements, input)
-                return input
-            end
-
-            -- ===
-            -- KEYBIND
-            -- ===
-            function section:AddKeybind(id, opts)
-                opts = opts or {}
-                local key = opts.Default or Enum.KeyCode.Unknown
-                local mode = opts.Mode or "Toggle"
-                local cb = opts.Callback or function() end
-                local active = false
-                local listening = false
-
-                local elem = create("Frame", {
-                    Size = UDim2.new(1, 0, 0, mobile and 38 or 32),
-                    BackgroundTransparency = 1,
-                    ZIndex = 6,
-                    Parent = elemContainer
-                })
-
-                create("TextLabel", {
-                    Size = UDim2.new(1, -80, 1, 0),
-                    BackgroundTransparency = 1,
-                    Text = opts.Text or id,
-                    TextColor3 = theme.Text,
-                    TextSize = 12,
-                    Font = Enum.Font.Gotham,
-                    TextXAlignment = Enum.TextXAlignment.Left,
-                    ZIndex = 7,
-                    Parent = elem
-                })
-
-                local bindBtn = create("TextButton", {
-                    Size = UDim2.new(0, 70, 0, 24),
-                    Position = UDim2.new(1, -74, 0.5, -12),
-                    BackgroundColor3 = theme.Surface,
-                    BackgroundTransparency = 0.3,
-                    Text = key ~= Enum.KeyCode.Unknown and key.Name or "None",
-                    TextColor3 = theme.TextDim,
-                    TextSize = 11,
-                    Font = Enum.Font.Code,
-                    BorderSizePixel = 0,
-                    AutoButtonColor = false,
-                    ZIndex = 8,
-                    Parent = elem
-                })
-                addCorner(bindBtn, 4)
-                addStroke(bindBtn, theme.Border, 1, 0.6)
-
-                bindBtn.MouseButton1Click:Connect(function()
-                    listening = true
-                    bindBtn.Text = "..."
-                    tween(bindBtn, {BackgroundColor3 = theme.Accent}, 0.15)
-                end)
-
-                UserInputService.InputBegan:Connect(function(inp, gpe)
-                    if listening then
-                        if inp.UserInputType == Enum.UserInputType.Keyboard then
-                            key = inp.KeyCode
-                            bindBtn.Text = key.Name
-                            listening = false
-                            tween(bindBtn, {BackgroundColor3 = theme.Surface}, 0.15)
-                            Velvet.Flags[id] = key
-                            fireListeners(id, key)
-                        end
-                        return
-                    end
-
-                    if gpe then return end
-                    if inp.KeyCode ~= key or key == Enum.KeyCode.Unknown then return end
-
-                    if mode == "Toggle" then
-                        active = not active
-                        safecall(`Keybind:{id}`, cb, active)
-                    elseif mode == "Hold" then
-                        active = true
-                        safecall(`Keybind:{id}`, cb, true)
-                    end
-                end)
-
-                UserInputService.InputEnded:Connect(function(inp)
-                    if mode == "Hold" and inp.KeyCode == key and active then
-                        active = false
-                        safecall(`Keybind:{id}`, cb, false)
-                    end
-                end)
-
-                Velvet.Flags[id] = key
-
-                local keybind = { Value = key, Active = active }
-                function keybind:Set(k)
-                    key = k
-                    bindBtn.Text = k.Name
-                    Velvet.Flags[id] = k
-                    fireListeners(id, k)
-                end
-                function keybind:Get() return key end
-                function keybind:IsActive() return active end
-
-                attachOnChanged(keybind, id)
-                setupVisibility(keybind, elem, opts)
-                setupTooltip(elem, opts)
-                tagSearch(elem, opts.Text or id)
-                Velvet._elements[id] = keybind
-                table.insert(section.Elements, keybind)
-                return keybind
-            end
-
-            -- ===
-            -- COLORPICKER
-            -- ===
-            function section:AddColorPicker(id, opts)
-                opts = opts or {}
-                local color = opts.Default or Color3.fromRGB(255, 255, 255)
-                local cb = opts.Callback or function() end
-
-                local elem = create("Frame", {
-                    Size = UDim2.new(1, 0, 0, mobile and 38 or 32),
-                    BackgroundTransparency = 1,
-                    ZIndex = 6,
-                    Parent = elemContainer
-                })
-
-                create("TextLabel", {
-                    Size = UDim2.new(1, -44, 1, 0),
-                    BackgroundTransparency = 1,
-                    Text = opts.Text or id,
-                    TextColor3 = theme.Text,
-                    TextSize = 12,
-                    Font = Enum.Font.Gotham,
-                    TextXAlignment = Enum.TextXAlignment.Left,
-                    ZIndex = 7,
-                    Parent = elem
-                })
-
-                -- swatch preview
-                local swatch = create("TextButton", {
-                    Size = UDim2.new(0, 28, 0, 20),
-                    Position = UDim2.new(1, -32, 0.5, -10),
-                    BackgroundColor3 = color,
-                    Text = "",
-                    BorderSizePixel = 0,
-                    AutoButtonColor = false,
-                    ZIndex = 8,
-                    Parent = elem
-                })
-                addCorner(swatch, 4)
-                addStroke(swatch, theme.Border, 1, 0.4)
-
-                -- picker popup (parented to gui so section ClipsDescendants doesn't clip it)
-                local pickerOpen = false
-                local pickerFrame = create("Frame", {
-                    Size = UDim2.new(0, 180, 0, 0),
-                    Position = UDim2.new(0, 0, 0, 0),
-                    BackgroundColor3 = theme.Surface,
-                    BackgroundTransparency = 0.05,
-                    ClipsDescendants = true,
-                    Visible = false,
-                    ZIndex = 100,
-                    Parent = gui
-                })
-                addCorner(pickerFrame, 8)
-                addStroke(pickerFrame, theme.Border, 1, 0.3)
-
-                -- hue/sat canvas
-                local canvas = create("Frame", {
-                    Size = UDim2.new(1, -16, 0, 120),
-                    Position = UDim2.new(0, 8, 0, 8),
-                    BackgroundColor3 = Color3.new(1, 0, 0),
-                    BorderSizePixel = 0,
-                    ZIndex = 31,
-                    Parent = pickerFrame
-                })
-                addCorner(canvas, 4)
-
-                -- sat overlay (white gradient left to right)
-                local satOverlay = create("Frame", {
-                    Size = UDim2.fromScale(1, 1),
-                    BackgroundColor3 = Color3.new(1, 1, 1),
-                    BorderSizePixel = 0,
-                    ZIndex = 32,
-                    Parent = canvas,
-                    Children = {
-                        create("UICorner", {CornerRadius = UDim.new(0, 4)}),
-                        create("UIGradient", {
-                            Color = ColorSequence.new(Color3.new(1,1,1), Color3.new(1,1,1)),
-                            Transparency = NumberSequence.new(0, 1),
-                            Rotation = 0,
-                        })
-                    }
-                })
-
-                -- val overlay (black gradient top to bottom)
-                local valOverlay = create("Frame", {
-                    Size = UDim2.fromScale(1, 1),
-                    BackgroundColor3 = Color3.new(0, 0, 0),
-                    BorderSizePixel = 0,
-                    ZIndex = 33,
-                    Parent = canvas,
-                    Children = {
-                        create("UICorner", {CornerRadius = UDim.new(0, 4)}),
-                        create("UIGradient", {
-                            Color = ColorSequence.new(Color3.new(0,0,0), Color3.new(0,0,0)),
-                            Transparency = NumberSequence.new(1, 0),
-                            Rotation = 90,
-                        })
-                    }
-                })
-
-                -- canvas cursor
-                local cursor = create("Frame", {
-                    Size = UDim2.new(0, 10, 0, 10),
-                    BackgroundColor3 = Color3.new(1,1,1),
-                    BorderSizePixel = 0,
-                    ZIndex = 35,
-                    Parent = canvas
-                })
-                addCorner(cursor, 5)
-                addStroke(cursor, Color3.new(0,0,0), 1, 0)
-
-                -- hue slider
-                local hueBar = create("Frame", {
-                    Size = UDim2.new(1, -16, 0, 12),
-                    Position = UDim2.new(0, 8, 0, 134),
-                    BackgroundColor3 = Color3.new(1,1,1),
-                    BorderSizePixel = 0,
-                    ZIndex = 31,
-                    Parent = pickerFrame,
-                    Children = {
-                        create("UICorner", {CornerRadius = UDim.new(0, 6)}),
-                        create("UIGradient", {
-                            Color = ColorSequence.new({
-                                ColorSequenceKeypoint.new(0, Color3.fromHSV(0,1,1)),
-                                ColorSequenceKeypoint.new(0.167, Color3.fromHSV(0.167,1,1)),
-                                ColorSequenceKeypoint.new(0.333, Color3.fromHSV(0.333,1,1)),
-                                ColorSequenceKeypoint.new(0.5, Color3.fromHSV(0.5,1,1)),
-                                ColorSequenceKeypoint.new(0.667, Color3.fromHSV(0.667,1,1)),
-                                ColorSequenceKeypoint.new(0.833, Color3.fromHSV(0.833,1,1)),
-                                ColorSequenceKeypoint.new(1, Color3.fromHSV(1,1,1)),
-                            })
-                        })
-                    }
-                })
-
-                local hueThumb = create("Frame", {
-                    Size = UDim2.new(0, 4, 1, 2),
-                    Position = UDim2.new(0, 0, 0, -1),
-                    BackgroundColor3 = Color3.new(1,1,1),
-                    BorderSizePixel = 0,
-                    ZIndex = 33,
-                    Parent = hueBar
-                })
-                addCorner(hueThumb, 2)
-
-                -- hex input
-                local hexBox = create("TextBox", {
-                    Size = UDim2.new(1, -16, 0, 22),
-                    Position = UDim2.new(0, 8, 0, 152),
-                    BackgroundColor3 = theme.Panel,
-                    Text = color3ToHex(color),
-                    TextColor3 = theme.Text,
-                    PlaceholderColor3 = theme.TextMuted,
-                    TextSize = 11,
-                    Font = Enum.Font.Code,
-                    BorderSizePixel = 0,
-                    ZIndex = 32,
-                    Parent = pickerFrame
-                })
-                addCorner(hexBox, 4)
-
-                -- state
-                local h, s, v = Color3.toHSV(color)
-
-                local function updateColor(silent)
-                    color = Color3.fromHSV(h, s, v)
-                    swatch.BackgroundColor3 = color
-                    canvas.BackgroundColor3 = Color3.fromHSV(h, 1, 1)
-                    cursor.Position = UDim2.new(s, -5, 1 - v, -5)
-                    hueThumb.Position = UDim2.new(h, -2, 0, -1)
-                    hexBox.Text = color3ToHex(color)
-                    Velvet.Flags[id] = color
-                    fireListeners(id, color)
-                    if not silent then safecall(`ColorPicker:{id}`, cb, color) end
-                end
-
-                -- canvas drag (claims mutex so slider underneath stays still)
-                local canvasDrag = false
-                canvas.InputBegan:Connect(function(inp)
-                    if inp.UserInputType == Enum.UserInputType.MouseButton1 or inp.UserInputType == Enum.UserInputType.Touch then
-                        canvasDrag = true
-                        Velvet._activeDrag = "picker"
-                    end
-                end)
-                UserInputService.InputChanged:Connect(function(inp)
-                    if not canvasDrag then return end
-                    if inp.UserInputType == Enum.UserInputType.MouseMovement or inp.UserInputType == Enum.UserInputType.Touch then
-                        local pos = Vector2.new(inp.Position.X, inp.Position.Y)
-                        s = clamp((pos.X - canvas.AbsolutePosition.X) / canvas.AbsoluteSize.X, 0, 1)
-                        v = 1 - clamp((pos.Y - canvas.AbsolutePosition.Y) / canvas.AbsoluteSize.Y, 0, 1)
-                        updateColor()
-                    end
-                end)
-                UserInputService.InputEnded:Connect(function(inp)
-                    if inp.UserInputType == Enum.UserInputType.MouseButton1 or inp.UserInputType == Enum.UserInputType.Touch then
-                        if canvasDrag then
-                            canvasDrag = false
-                            if Velvet._activeDrag == "picker" then Velvet._activeDrag = nil end
-                        end
-                    end
-                end)
-
-                -- hue drag
-                local hueDrag = false
-                hueBar.InputBegan:Connect(function(inp)
-                    if inp.UserInputType == Enum.UserInputType.MouseButton1 or inp.UserInputType == Enum.UserInputType.Touch then
-                        hueDrag = true
-                        Velvet._activeDrag = "picker"
-                    end
-                end)
-                UserInputService.InputChanged:Connect(function(inp)
-                    if not hueDrag then return end
-                    if inp.UserInputType == Enum.UserInputType.MouseMovement or inp.UserInputType == Enum.UserInputType.Touch then
-                        h = clamp((inp.Position.X - hueBar.AbsolutePosition.X) / hueBar.AbsoluteSize.X, 0, 1)
-                        updateColor()
-                    end
-                end)
-                UserInputService.InputEnded:Connect(function(inp)
-                    if inp.UserInputType == Enum.UserInputType.MouseButton1 or inp.UserInputType == Enum.UserInputType.Touch then
-                        if hueDrag then
-                            hueDrag = false
-                            if Velvet._activeDrag == "picker" then Velvet._activeDrag = nil end
-                        end
-                    end
-                end)
-
-                -- hex input
-                hexBox.FocusLost:Connect(function()
-                    local ok, c = pcall(hexToColor3, hexBox.Text)
-                    if ok and c then
-                        h, s, v = Color3.toHSV(c)
-                        updateColor()
-                    end
-                end)
-
-                swatch.MouseButton1Click:Connect(function()
-                    pickerOpen = not pickerOpen
-                    if pickerOpen then
-                        -- position next to swatch
-                        local absPos = swatch.AbsolutePosition
-                        local absSize = swatch.AbsoluteSize
-                        local guiOff = gui.AbsolutePosition
-                        local px = absPos.X - guiOff.X + absSize.X - 180
-                        local py = absPos.Y - guiOff.Y + absSize.Y + 4
-                        pickerFrame.Position = UDim2.new(0, px, 0, py)
-                        pickerFrame.Visible = true
-                        tween(pickerFrame, {Size = UDim2.new(0, 180, 0, 182)}, 0.2)
-                    else
-                        tween(pickerFrame, {Size = UDim2.new(0, 180, 0, 0)}, 0.15)
-                        task.delay(0.15, function() pickerFrame.Visible = false end)
-                    end
-                end)
-
-                updateColor(true)
-
-                local picker = { Value = color }
-                function picker:Set(c)
-                    h, s, v = Color3.toHSV(c)
-                    updateColor()
-                end
-                function picker:Get() return color end
-
-                attachOnChanged(picker, id)
-                setupVisibility(picker, elem, opts)
-                setupTooltip(elem, opts)
-                tagSearch(elem, opts.Text or id)
-                Velvet._elements[id] = picker
-                table.insert(section.Elements, picker)
-                return picker
-            end
-
-            -- ===
-            -- LABEL
-            -- ===
-            function section:AddLabel(text)
-                -- accept table form too: AddLabel({ Text = "..." })
-                if type(text) == "table" then text = text.Text or text.Title or "" end
-                local lbl = create("TextLabel", {
-                    Size = UDim2.new(1, 0, 0, 18),
-                    BackgroundTransparency = 1,
-                    Text = tostring(text or ""),
-                    TextColor3 = theme.TextDim,
-                    TextSize = 11,
-                    Font = Enum.Font.Gotham,
-                    TextXAlignment = Enum.TextXAlignment.Left,
-                    ZIndex = 7,
-                    Parent = elemContainer
-                })
-                local label = {}
-                function label:Set(t) lbl.Text = t end
-                return label
-            end
-
-            -- ===
-            -- DIVIDER
-            -- ===
-            function section:AddDivider()
-                create("Frame", {
-                    Size = UDim2.new(1, 0, 0, 1),
-                    BackgroundColor3 = theme.Border,
-                    BackgroundTransparency = 0.5,
-                    BorderSizePixel = 0,
-                    ZIndex = 6,
-                    Parent = elemContainer
-                })
-            end
-
-            -- ===
-            -- PARAGRAPH
-            -- ===
-            function section:AddParagraph(opts)
-                opts = opts or {}
-                local frame = create("Frame", {
-                    Size = UDim2.new(1, 0, 0, 0),
-                    BackgroundTransparency = 1,
-                    AutomaticSize = Enum.AutomaticSize.Y,
-                    ZIndex = 6,
-                    Parent = elemContainer
-                })
-
-                if opts.Title then
-                    create("TextLabel", {
-                        Size = UDim2.new(1, 0, 0, 16),
-                        BackgroundTransparency = 1,
-                        Text = opts.Title,
-                        TextColor3 = theme.Text,
-                        TextSize = 12,
-                        Font = Enum.Font.GothamBold,
-                        TextXAlignment = Enum.TextXAlignment.Left,
-                        ZIndex = 7,
-                        Parent = frame
-                    })
-                end
-
-                local bodyLbl = create("TextLabel", {
-                    Size = UDim2.new(1, 0, 0, 0),
-                    Position = UDim2.new(0, 0, 0, opts.Title and 18 or 0),
-                    BackgroundTransparency = 1,
-                    Text = opts.Content or "",
-                    TextColor3 = theme.TextDim,
-                    TextSize = 11,
-                    Font = Enum.Font.Gotham,
-                    TextXAlignment = Enum.TextXAlignment.Left,
-                    TextWrapped = true,
-                    AutomaticSize = Enum.AutomaticSize.Y,
-                    ZIndex = 7,
-                    Parent = frame
-                })
-
-                local para = {}
-                function para:Set(txt) bodyLbl.Text = txt end
-                return para
-            end
-
-            -- ===
-            -- PROGRESS BAR
-            -- ===
-            function section:AddProgressBar(id, opts)
-                opts = opts or {}
-                local progress = opts.Default or 0
-                local maxVal = opts.Max or 100
-                local showText = opts.ShowText ~= false
-
-                local elem = create("Frame", {
-                    Size = UDim2.new(1, 0, 0, 34),
-                    BackgroundTransparency = 1,
-                    ZIndex = 6,
-                    Parent = elemContainer
-                })
-
-                local topLbl = create("TextLabel", {
-                    Size = UDim2.new(1, 0, 0, 14),
-                    BackgroundTransparency = 1,
-                    Text = opts.Text or id,
-                    TextColor3 = theme.TextDim,
-                    TextSize = 10,
-                    Font = Enum.Font.GothamMedium,
-                    TextXAlignment = Enum.TextXAlignment.Left,
-                    ZIndex = 7,
-                    Parent = elem
-                })
-
-                local barBg = create("Frame", {
-                    Size = UDim2.new(1, 0, 0, 12),
-                    Position = UDim2.new(0, 0, 0, 18),
-                    BackgroundColor3 = theme.Surface,
-                    BackgroundTransparency = 0.2,
-                    BorderSizePixel = 0,
-                    ClipsDescendants = true,
-                    ZIndex = 7,
-                    Parent = elem
-                })
-                addCorner(barBg, 4)
-                addStroke(barBg, theme.Border, 1, 0.6)
-
-                local fill = create("Frame", {
-                    Size = UDim2.new(math.clamp(progress / maxVal, 0, 1), 0, 1, 0),
-                    BackgroundColor3 = opts.Color or theme.Accent,
-                    BorderSizePixel = 0,
-                    ZIndex = 8,
-                    Parent = barBg
-                })
-
-                local pctLbl
-                if showText then
-                    pctLbl = create("TextLabel", {
-                        Size = UDim2.new(0, 50, 0, 14),
-                        Position = UDim2.new(1, -50, 0, 0),
-                        BackgroundTransparency = 1,
-                        Text = tostring(math.floor(progress)) .. "/" .. tostring(maxVal),
-                        TextColor3 = theme.TextDim,
-                        TextSize = 10,
-                        Font = Enum.Font.Code,
-                        TextXAlignment = Enum.TextXAlignment.Right,
-                        ZIndex = 7,
-                        Parent = elem
-                    })
-                end
-
-                Velvet.Flags[id] = progress
-
-                local bar = { Value = progress }
-                function bar:Set(v)
-                    progress = math.clamp(v, 0, maxVal)
-                    tween(fill, {Size = UDim2.new(progress / maxVal, 0, 1, 0)}, 0.12)
-                    if pctLbl then pctLbl.Text = tostring(math.floor(progress)) .. "/" .. tostring(maxVal) end
-                    Velvet.Flags[id] = progress
-                    fireListeners(id, progress)
-                end
-                function bar:SetMax(m)
-                    maxVal = m
-                    bar:Set(progress)
-                end
-                function bar:SetColor(c) fill.BackgroundColor3 = c end
-                function bar:Get() return progress end
-
-                attachOnChanged(bar, id)
-                setupVisibility(bar, elem, opts)
-                setupTooltip(elem, opts)
-                tagSearch(elem, opts.Text or id)
-                Velvet._elements[id] = bar
-                table.insert(section.Elements, bar)
-                return bar
-            end
-
-            -- ===
-            -- LOG / CONSOLE
-            -- ===
-            function section:AddLog(opts)
-                opts = opts or {}
-                local maxLines = opts.MaxLines or 50
-                local lines = {}
-
-                local elem = create("Frame", {
-                    Size = UDim2.new(1, 0, 0, opts.Height or 120),
-                    BackgroundColor3 = theme.Surface,
-                    BackgroundTransparency = 0.2,
-                    BorderSizePixel = 0,
-                    ZIndex = 6,
-                    Parent = elemContainer
-                })
-                addCorner(elem, 4)
-                addStroke(elem, theme.Border, 1, 0.6)
-
-                local scroll = create("ScrollingFrame", {
-                    Size = UDim2.new(1, -8, 1, -8),
-                    Position = UDim2.new(0, 4, 0, 4),
-                    BackgroundTransparency = 1,
-                    BorderSizePixel = 0,
-                    ScrollBarThickness = 2,
-                    ScrollBarImageColor3 = theme.Border,
-                    CanvasSize = UDim2.new(0, 0, 0, 0),
-                    AutomaticCanvasSize = Enum.AutomaticSize.Y,
-                    ScrollingDirection = Enum.ScrollingDirection.Y,
-                    ZIndex = 7,
-                    Parent = elem
-                })
-
-                local layout = create("UIListLayout", {
-                    SortOrder = Enum.SortOrder.LayoutOrder,
-                    Padding = UDim.new(0, 1),
-                    Parent = scroll
-                })
-
-                local log = {}
-                local function append(txt, color)
-                    if #lines >= maxLines then
-                        local first = lines[1]
-                        if first then first:Destroy() end
-                        table.remove(lines, 1)
-                    end
-                    local line = create("TextLabel", {
-                        Size = UDim2.new(1, 0, 0, 14),
-                        BackgroundTransparency = 1,
-                        Text = txt,
-                        TextColor3 = color or theme.TextDim,
-                        TextSize = 11,
-                        Font = Enum.Font.Code,
-                        TextXAlignment = Enum.TextXAlignment.Left,
-                        TextTruncate = Enum.TextTruncate.AtEnd,
-                        LayoutOrder = #lines + 1,
-                        ZIndex = 8,
-                        Parent = scroll
-                    })
-                    table.insert(lines, line)
-                    task.defer(function()
-                        scroll.CanvasPosition = Vector2.new(0, scroll.AbsoluteCanvasSize.Y)
-                    end)
-                end
-
-                function log:Info(txt)  append("[i] " .. tostring(txt), theme.Text) end
-                function log:Warn(txt)  append("[!] " .. tostring(txt), Color3.fromRGB(255, 200, 90)) end
-                function log:Error(txt) append("[x] " .. tostring(txt), Color3.fromRGB(255, 90, 90)) end
-                function log:Success(txt) append("[+] " .. tostring(txt), Color3.fromRGB(120, 230, 140)) end
-                function log:Print(txt, color) append(tostring(txt), color) end
-                function log:Clear()
-                    for _, l in lines do l:Destroy() end
-                    table.clear(lines)
-                end
-
-                table.insert(section.Elements, log)
-                return log
-            end
-
-            -- ===
-            -- PLAYER SELECTOR (dropdown preloaded with players + auto-refresh)
-            -- ===
-            function section:AddPlayerSelector(id, opts)
-                opts = opts or {}
-                local excludeSelf = opts.ExcludeSelf ~= false
-                local multi = opts.Multi or false
-
-                local function buildList()
-                    local list = {}
-                    if not excludeSelf then table.insert(list, "@me") end
-                    table.insert(list, "@random")
-                    table.insert(list, "@nearest")
-                    for _, p in pairs(Players:GetPlayers()) do
-                        if not excludeSelf or p ~= Players.LocalPlayer then
-                            table.insert(list, p.Name)
-                        end
-                    end
-                    return list
-                end
-
-                local dropOpts = {
-                    Text = opts.Text or "Select Player",
-                    Values = buildList(),
-                    Default = opts.Default or (multi and {} or ""),
-                    Multi = multi,
-                    Callback = opts.Callback,
-                    VisibleWhen = opts.VisibleWhen,
-                }
-
-                local dd = section:AddDropdown(id, dropOpts)
-
-                -- auto-refresh on join/leave
-                local conn1 = Players.PlayerAdded:Connect(function() dd:Refresh(buildList()) end)
-                local conn2 = Players.PlayerRemoving:Connect(function() dd:Refresh(buildList()) end)
-
-                function dd:GetPlayers()
-                    local sel = dd:Get()
-                    if type(sel) == "string" then
-                        if sel == "@me" then return {Players.LocalPlayer}
-                        elseif sel == "@random" then
-                            local list = {}
-                            for _, p in pairs(Players:GetPlayers()) do
-                                if p ~= Players.LocalPlayer then table.insert(list, p) end
-                            end
-                            return #list > 0 and {list[math.random(1, #list)]} or {}
-                        elseif sel == "@nearest" then
-                            local lp = Players.LocalPlayer
-                            local myChar = lp.Character
-                            if not myChar or not myChar:FindFirstChild("HumanoidRootPart") then return {} end
-                            local myPos = myChar.HumanoidRootPart.Position
-                            local best, bd = nil, math.huge
-                            for _, p in pairs(Players:GetPlayers()) do
-                                if p ~= lp and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-                                    local d = (p.Character.HumanoidRootPart.Position - myPos).Magnitude
-                                    if d < bd then best, bd = p, d end
-                                end
-                            end
-                            return best and {best} or {}
-                        else
-                            local p = Players:FindFirstChild(sel)
-                            return p and {p} or {}
-                        end
-                    elseif type(sel) == "table" then
-                        local out = {}
-                        for name, on in pairs(sel) do
-                            if on then
-                                local p = Players:FindFirstChild(name)
-                                if p then table.insert(out, p) end
-                            end
-                        end
-                        return out
-                    end
-                    return {}
-                end
-
-                return dd
-            end
-
-            table.insert(tab.Sections, section)
             return section
         end
 
         return tab
     end
 
+    function Velvet:Destroy()
+        pcall(function() gui:Destroy() end)
+        pcall(function() notifGui:Destroy() end)
+        self.Flags = {}
+        self.Windows = {}
+        self._listeners = {}
+        self._elements = {}
+    end
+
     table.insert(self.Windows, window)
     return window
-end
-
--- theme setter with live recolor
-function Velvet:SetTheme(themeTable)
-    -- build old->new color map
-    local colorMap = {}
-    for k, v in themeTable do
-        if typeof(v) == "Color3" and typeof(self.Theme[k]) == "Color3" then
-            local old = self.Theme[k]
-            colorMap[string.format("%d_%d_%d", math.floor(old.R*255+.5), math.floor(old.G*255+.5), math.floor(old.B*255+.5))] = v
-        end
-        self.Theme[k] = v
-    end
-
-    -- recolor all descendants of VelvetUI + VelvetNotifs
-    local colorProps = {"BackgroundColor3", "TextColor3", "PlaceholderColor3", "ImageColor3", "ScrollBarImageColor3"}
-    local containers = {}
-    pcall(function()
-        for _, g in gethui():GetChildren() do
-            if g.Name == "VelvetUI" or g.Name == "VelvetNotifs" then
-                table.insert(containers, g)
-            end
-        end
-    end)
-
-    for _, container in containers do
-        for _, desc in container:GetDescendants() do
-            for _, prop in colorProps do
-                pcall(function()
-                    local cur = desc[prop]
-                    if typeof(cur) == "Color3" then
-                        local key = string.format("%d_%d_%d", math.floor(cur.R*255+.5), math.floor(cur.G*255+.5), math.floor(cur.B*255+.5))
-                        if colorMap[key] then
-                            desc[prop] = colorMap[key]
-                        end
-                    end
-                end)
-            end
-            -- UIStroke
-            if desc:IsA("UIStroke") then
-                pcall(function()
-                    local cur = desc.Color
-                    local key = string.format("%d_%d_%d", math.floor(cur.R*255+.5), math.floor(cur.G*255+.5), math.floor(cur.B*255+.5))
-                    if colorMap[key] then desc.Color = colorMap[key] end
-                end)
-            end
-        end
-    end
-
-    -- also update watermark if exists
-    if self._watermark then
-        pcall(function()
-            for _, desc in self._watermark:GetDescendants() do
-                for _, prop in colorProps do
-                    pcall(function()
-                        local cur = desc[prop]
-                        if typeof(cur) == "Color3" then
-                            local key = string.format("%d_%d_%d", math.floor(cur.R*255+.5), math.floor(cur.G*255+.5), math.floor(cur.B*255+.5))
-                            if colorMap[key] then desc[prop] = colorMap[key] end
-                        end
-                    end)
-                end
-            end
-        end)
-    end
-end
-
-function Velvet:GetTheme()
-    return self.Theme
-end
-
--- ~~
--- WATERMARK / HUD
--- ~~
-function Velvet:CreateWatermark(opts)
-    opts = opts or {}
-    local theme = self.Theme
-
-    -- kill old
-    if self._watermark then
-        pcall(function() self._watermark:Destroy() end)
-    end
-
-    local frame = create("Frame", {
-        Name = "VelvetWatermark",
-        Size = UDim2.new(0, 200, 0, 26),
-        Position = opts.Position or UDim2.new(0, 12, 0, 12),
-        BackgroundColor3 = theme.Base,
-        BackgroundTransparency = 0.15,
-        BorderSizePixel = 0,
-        AutomaticSize = Enum.AutomaticSize.X,
-        ZIndex = 200,
-        Parent = gui
-    })
-    addCorner(frame, 6)
-    addStroke(frame, theme.Accent, 1, 0.4)
-
-    local pad = create("UIPadding", {
-        PaddingLeft = UDim.new(0, 10),
-        PaddingRight = UDim.new(0, 10),
-        Parent = frame,
-    })
-
-    local lbl = create("TextLabel", {
-        Size = UDim2.new(0, 0, 1, 0),
-        AutomaticSize = Enum.AutomaticSize.X,
-        BackgroundTransparency = 1,
-        Text = opts.Text or "Velvet | {fps} fps | {ping} ms",
-        TextColor3 = theme.Text,
-        TextSize = 11,
-        Font = Enum.Font.Code,
-        TextXAlignment = Enum.TextXAlignment.Left,
-        ZIndex = 201,
-        Parent = frame,
-    })
-
-    self._watermark = frame
-
-    -- live update
-    local template = opts.Text or "Velvet | {fps} fps | {ping} ms"
-    local lastTick = tick()
-    local frames = 0
-    local fps = 60
-
-    local RS = game:GetService("RunService")
-    local stats = game:GetService("Stats")
-    local lp = Players.LocalPlayer
-
-    local conn
-    conn = RS.RenderStepped:Connect(function()
-        frames = frames + 1
-        local now = tick()
-        if now - lastTick >= 0.5 then
-            fps = math.floor(frames / (now - lastTick))
-            frames = 0
-            lastTick = now
-        end
-
-        local ping = 0
-        pcall(function()
-            ping = math.floor(stats.Network.ServerStatsItem["Data Ping"]:GetValue())
-        end)
-
-        local txt = template
-        txt = txt:gsub("{fps}", tostring(fps))
-        txt = txt:gsub("{ping}", tostring(ping))
-        txt = txt:gsub("{time}", os.date("%H:%M:%S"))
-        txt = txt:gsub("{user}", lp and lp.Name or "?")
-        txt = txt:gsub("{place}", tostring(game.PlaceId))
-
-        -- substitute flags
-        txt = txt:gsub("{flag:([%w_]+)}", function(flag)
-            local v = Velvet.Flags[flag]
-            if v == nil then return "?" end
-            return tostring(v)
-        end)
-
-        lbl.Text = txt
-    end)
-
-    local watermark = {}
-    function watermark:SetText(t) template = t end
-    function watermark:SetPosition(p) frame.Position = p end
-    function watermark:Destroy()
-        if conn then conn:Disconnect() end
-        pcall(function() frame:Destroy() end)
-        Velvet._watermark = nil
-    end
-    function watermark:Show() frame.Visible = true end
-    function watermark:Hide() frame.Visible = false end
-
-    return watermark
-end
-
--- ~~
--- HAPTIC FEEDBACK (mobile-ish, uses HapticService + visual flash)
--- ~~
-function Velvet:Haptic(strength)
-    -- strength: "light" | "medium" | "heavy"
-    strength = strength or "light"
-    local HapticService = game:GetService("HapticService")
-    pcall(function()
-        local motor = Enum.VibrationMotor.Large
-        local amp = strength == "heavy" and 1 or strength == "medium" and 0.6 or 0.3
-        -- try all gamepads
-        for _, gp in pairs(Enum.UserInputType:GetEnumItems()) do
-            if tostring(gp):find("Gamepad") then
-                pcall(function()
-                    HapticService:SetMotor(gp, motor, amp)
-                    task.delay(0.05, function()
-                        pcall(function() HapticService:SetMotor(gp, motor, 0) end)
-                    end)
-                end)
-            end
-        end
-    end)
-end
-
--- ~~
--- AUTO-UPDATE CHECK (fetches latest tag from github)
--- ~~
-function Velvet:CheckForUpdate(repo)
-    repo = repo or "DexCodeSX/Velvet"
-    local url = "https://api.github.com/repos/" .. repo .. "/releases/latest"
-    local ok, resp = pcall(function()
-        if request then
-            return request({Url = url, Method = "GET"})
-        elseif http_request then
-            return http_request({Url = url, Method = "GET"})
-        end
-    end)
-    if not ok or not resp or not resp.Body then return nil end
-    local HttpService = game:GetService("HttpService")
-    local okDec, data = pcall(function() return HttpService:JSONDecode(resp.Body) end)
-    if not okDec or not data.tag_name then return nil end
-    return {
-        latest = data.tag_name,
-        current = self._version,
-        outdated = data.tag_name ~= self._version,
-        url = data.html_url,
-        body = data.body,
-    }
-end
-
--- ~~
--- TOOLTIP helper (attach to any GuiObject)
--- ~~
-function Velvet:AttachTooltip(guiObj, text)
-    if not guiObj or not text then return end
-    local theme = self.Theme
-    local tip
-    local function show()
-        if tip then pcall(function() tip:Destroy() end) end
-        tip = create("Frame", {
-            Name = "VelvetTooltip",
-            Size = UDim2.new(0, 0, 0, 22),
-            AutomaticSize = Enum.AutomaticSize.X,
-            BackgroundColor3 = theme.Base,
-            BackgroundTransparency = 0.05,
-            BorderSizePixel = 0,
-            ZIndex = 250,
-            Parent = gui,
-        })
-        addCorner(tip, 4)
-        addStroke(tip, theme.Border, 1, 0.5)
-        create("UIPadding", {
-            PaddingLeft = UDim.new(0, 8),
-            PaddingRight = UDim.new(0, 8),
-            Parent = tip,
-        })
-        create("TextLabel", {
-            Size = UDim2.new(0, 0, 1, 0),
-            AutomaticSize = Enum.AutomaticSize.X,
-            BackgroundTransparency = 1,
-            Text = text,
-            TextColor3 = theme.Text,
-            TextSize = 11,
-            Font = Enum.Font.Gotham,
-            ZIndex = 251,
-            Parent = tip,
-        })
-        local pos = guiObj.AbsolutePosition
-        local sz = guiObj.AbsoluteSize
-        tip.Position = UDim2.new(0, pos.X, 0, pos.Y + sz.Y + 4)
-    end
-    local function hide()
-        if tip then pcall(function() tip:Destroy() end) tip = nil end
-    end
-    guiObj.MouseEnter:Connect(show)
-    guiObj.MouseLeave:Connect(hide)
-    if guiObj:IsA("GuiButton") then
-        guiObj.MouseButton1Click:Connect(hide)
-    end
-end
-
--- cleanup: destroy all velvet windows, clear listeners, disconnect everything
-function Velvet:Destroy()
-    -- fire cleanup listener if registered
-    if self._onDestroy then
-        for _, fn in self._onDestroy do pcall(fn) end
-    end
-
-    -- destroy all tracked connections
-    if self._connections then
-        for _, c in self._connections do
-            pcall(function() c:Disconnect() end)
-        end
-        table.clear(self._connections)
-    end
-
-    -- nuke watermark if exists
-    if self._watermark then
-        pcall(function() self._watermark:Destroy() end)
-        self._watermark = nil
-    end
-
-    -- destroy all window screengui's
-    for _, w in self.Windows do
-        if w and w.ScreenGui then
-            pcall(function() w.ScreenGui:Destroy() end)
-        end
-    end
-
-    -- also blow away any leftover gui under gethui named Velvet/VelvetUI/VelvetNotifs
-    local hui = (gethui and gethui()) or game:GetService("CoreGui")
-    for _, g in pairs(hui:GetChildren()) do
-        if g.Name == "Velvet" or g.Name == "VelvetUI" or g.Name == "VelvetNotifs" then
-            pcall(function() g:Destroy() end)
-        end
-    end
-
-    table.clear(self.Windows)
-    table.clear(self.Flags)
-    table.clear(self._listeners)
-    table.clear(self._elements)
-end
-
-function Velvet:OnDestroy(fn)
-    if not self._onDestroy then self._onDestroy = {} end
-    table.insert(self._onDestroy, fn)
 end
 
 return Velvet
