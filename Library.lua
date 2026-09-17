@@ -1323,8 +1323,8 @@ function Velvet:CreateWindow(opts)
     local pillText = opts.ToggleText or resolvedToggleIcon or "V"
     local pillIsIcon = resolvedToggleIcon ~= nil
     
-    local pillH = 64
-    local pillW = 64
+    local pillH = 52
+    local pillW = 52
 
     local togglePill = create("TextButton", {
         Name = "VelvetToggle",
