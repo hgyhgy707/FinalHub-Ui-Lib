@@ -1325,8 +1325,8 @@ function Velvet:CreateWindow(opts)
     local pillIsIcon = resolvedToggleIcon ~= nil
     
     -- [แก้ไข] กำหนดขนาดเป็น 128x128 pixels ตามต้องการ
-    local pillH = 128
-    local pillW = 128
+    local pillH = 64
+    local pillW = 64
 
     local togglePill = create("TextButton", {
         Name = "VelvetToggle",
