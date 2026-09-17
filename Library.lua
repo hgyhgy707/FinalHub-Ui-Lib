@@ -27,27 +27,27 @@ local Velvet = {
 
 -- defaults
 local DEFAULT_THEME = {
-    Name = "Midnight",
-    Base = Color3.fromRGB(10, 10, 14),
-    Surface = Color3.fromRGB(18, 18, 26),
-    Panel = Color3.fromRGB(24, 24, 36),
-    Border = Color3.fromRGB(45, 45, 65),
-    Accent = Color3.fromRGB(124, 92, 252),
-    AccentDark = Color3.fromRGB(90, 65, 200),
-    Text = Color3.fromRGB(232, 232, 240),
-    TextDim = Color3.fromRGB(136, 136, 170),
-    TextMuted = Color3.fromRGB(80, 80, 110),
-    Success = Color3.fromRGB(80, 220, 120),
-    Warning = Color3.fromRGB(255, 180, 50),
-    Error = Color3.fromRGB(255, 80, 80),
-    Info = Color3.fromRGB(80, 160, 255),
+    Name = "Sunset",
+    Base = Color3.fromRGB(16, 10, 8),
+    Surface = Color3.fromRGB(28, 18, 14),
+    Panel = Color3.fromRGB(40, 26, 20),
+    Border = Color3.fromRGB(70, 45, 35),
+    Accent = Color3.fromRGB(255, 130, 50),
+    AccentDark = Color3.fromRGB(200, 95, 35),
+    Text = Color3.fromRGB(250, 238, 228),
+    TextDim = Color3.fromRGB(180, 145, 120),
+    TextMuted = Color3.fromRGB(110, 80, 60),
+    Success = Color3.fromRGB(90, 220, 120),
+    Warning = Color3.fromRGB(255, 200, 60),
+    Error = Color3.fromRGB(255, 75, 75),
+    Info = Color3.fromRGB(100, 170, 255),
 }
 
 Velvet.Theme = DEFAULT_THEME
 
 -- preset themes (devs love these)
 Velvet.Themes = {
-    Midnight = DEFAULT_THEME,
+    Sunset = DEFAULT_THEME,
 
     Catppuccin = {
         Name = "Catppuccin",
