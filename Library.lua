@@ -1318,26 +1318,21 @@ function Velvet:CreateWindow(opts)
         end
     end)
 
-    -- floating toggle pill
+-- floating toggle pill
     -- toggle pill - supports text OR icon, auto-sizes
-    local resolvedToggleIcon = Velvet:ResolveIcon(opts.ToggleIcon)
+    local resolvedToggleIcon = opts.ToggleIcon
     local pillText = opts.ToggleText or resolvedToggleIcon or "V"
     local pillIsIcon = resolvedToggleIcon ~= nil
-    local pillH = mobile and 48 or 36
-
-    -- calc width: auto-size for text length
-    local pillW = pillH -- default square
-    if not pillIsIcon and #pillText > 1 then
-        -- estimate text width + padding
-        pillW = math.max(pillH, #pillText * (mobile and 11 or 9) + (mobile and 24 or 18))
-    end
+    
+    -- [แก้ไข] กำหนดขนาดเป็น 128x128 pixels ตามต้องการ
+    local pillH = 128
+    local pillW = 128
 
     local togglePill = create("TextButton", {
         Name = "VelvetToggle",
         Size = UDim2.new(0, pillW, 0, pillH),
         Position = UDim2.new(0, 12, 0.5, -pillH/2),
-        BackgroundColor3 = theme.Accent,
-        BackgroundTransparency = 0.15,
+        BackgroundTransparency = 1, -- [แก้ไข] โปร่งใส 100% ไม่ติดสีพื้นหลัง/สีเหลือง
         Text = "",
         BorderSizePixel = 0,
         AutoButtonColor = false,
@@ -1345,17 +1340,17 @@ function Velvet:CreateWindow(opts)
         Visible = false,
         Parent = gui
     })
-    addCorner(togglePill, pillH / 2)
-    addStroke(togglePill, theme.Accent, 1, 0.3)
+    
+    -- [แก้ไข] ลบ addCorner และ addStroke (เส้นขอบสี Accent/สีเหลือง) ออกเรียบร้อยแล้ว
 
     if pillIsIcon then
-        -- icon mode: use ImageLabel
+        -- icon mode: แสดงรูปภาพสี่เหลี่ยมขนาด 128x128 เต็มพื้นที่
         local iconImg = create("ImageLabel", {
-            Size = UDim2.new(0, mobile and 22 or 18, 0, mobile and 22 or 18),
-            Position = UDim2.new(0.5, mobile and -11 or -9, 0.5, mobile and -11 or -9),
+            Size = UDim2.fromScale(1, 1),
+            Position = UDim2.fromScale(0, 0),
             BackgroundTransparency = 1,
             Image = resolvedToggleIcon,
-            ImageColor3 = theme.Text,
+            ImageColor3 = Color3.fromRGB(255, 255, 255), -- แสดงสีจริงของรูปภาพ ไม่ผสมสีธีม
             ScaleType = Enum.ScaleType.Fit,
             ZIndex = 101,
             Parent = togglePill
@@ -1406,13 +1401,7 @@ function Velvet:CreateWindow(opts)
         end
     end)
 
-    -- hover glow on pill
-    togglePill.MouseEnter:Connect(function()
-        tween(togglePill, {BackgroundTransparency = 0}, 0.15)
-    end)
-    togglePill.MouseLeave:Connect(function()
-        tween(togglePill, {BackgroundTransparency = 0.15}, 0.15)
-    end)
+    -- [แก้ไข] ลบ hover background glow เพื่อไม่ให้มีสีพื้นหลังขึ้นมาบดบังตอนชี้เมาส์
 
     window._togglePill = togglePill
 
@@ -1442,7 +1431,6 @@ function Velvet:CreateWindow(opts)
             -- skip the pill if an addon (e.g. QuickBar) suppresses it
             if not self._pillSuppressed then
                 togglePill.Visible = true
-                tween(togglePill, {BackgroundTransparency = 0.15}, 0.2)
             else
                 togglePill.Visible = false
             end
