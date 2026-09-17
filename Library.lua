@@ -1319,12 +1319,10 @@ function Velvet:CreateWindow(opts)
     end)
 
 -- floating toggle pill
-    -- toggle pill - supports text OR icon, auto-sizes
     local resolvedToggleIcon = opts.ToggleIcon
     local pillText = opts.ToggleText or resolvedToggleIcon or "V"
     local pillIsIcon = resolvedToggleIcon ~= nil
     
-    -- [แก้ไข] กำหนดขนาดเป็น 128x128 pixels ตามต้องการ
     local pillH = 64
     local pillW = 64
 
@@ -1332,31 +1330,27 @@ function Velvet:CreateWindow(opts)
         Name = "VelvetToggle",
         Size = UDim2.new(0, pillW, 0, pillH),
         Position = UDim2.new(0, 12, 0.5, -pillH/2),
-        BackgroundTransparency = 1, -- [แก้ไข] โปร่งใส 100% ไม่ติดสีพื้นหลัง/สีเหลือง
+        BackgroundTransparency = 1,
         Text = "",
         BorderSizePixel = 0,
         AutoButtonColor = false,
         ZIndex = 100,
-        Visible = false,
+        Visible = true, -- [แก้ไข] แสดง Icon อยู่ตลอดเวลาตั้งแต่เริ่มต้น
         Parent = gui
     })
-    
-    -- [แก้ไข] ลบ addCorner และ addStroke (เส้นขอบสี Accent/สีเหลือง) ออกเรียบร้อยแล้ว
 
     if pillIsIcon then
-        -- icon mode: แสดงรูปภาพสี่เหลี่ยมขนาด 128x128 เต็มพื้นที่
         local iconImg = create("ImageLabel", {
             Size = UDim2.fromScale(1, 1),
             Position = UDim2.fromScale(0, 0),
             BackgroundTransparency = 1,
             Image = resolvedToggleIcon,
-            ImageColor3 = Color3.fromRGB(255, 255, 255), -- แสดงสีจริงของรูปภาพ ไม่ผสมสีธีม
+            ImageColor3 = Color3.fromRGB(255, 255, 255),
             ScaleType = Enum.ScaleType.Fit,
             ZIndex = 101,
             Parent = togglePill
         })
     else
-        -- text mode
         create("TextLabel", {
             Size = UDim2.fromScale(1, 1),
             BackgroundTransparency = 1,
@@ -1370,7 +1364,7 @@ function Velvet:CreateWindow(opts)
         })
     end
 
-    -- pill drag
+    -- pill drag & click
     local pillDrag, pillDragStart, pillStartPos = false, nil, nil
     local pillMoved = false
 
@@ -1394,14 +1388,12 @@ function Velvet:CreateWindow(opts)
     UserInputService.InputEnded:Connect(function(inp)
         if inp.UserInputType == Enum.UserInputType.MouseButton1 or inp.UserInputType == Enum.UserInputType.Touch then
             if pillDrag and not pillMoved then
-                -- tap, toggle window
-                window:Show()
+                -- [แก้ไข] กด Icon เพื่อสลับเปิด-ปิด UI (Toggle)
+                window:Toggle()
             end
             pillDrag = false
         end
     end)
-
-    -- [แก้ไข] ลบ hover background glow เพื่อไม่ให้มีสีพื้นหลังขึ้นมาบดบังตอนชี้เมาส์
 
     window._togglePill = togglePill
 
@@ -1410,7 +1402,7 @@ function Velvet:CreateWindow(opts)
         if self.Visible then return end
         self.Visible = true
         main.Visible = true
-        togglePill.Visible = false
+        -- [แก้ไข] ลบ togglePill.Visible = false ออก เพื่อให้ Icon ค้างอยู่บนจอ
         main.Size = UDim2.new(0, winW * 0.9, 0, winH * 0.9)
         main.BackgroundTransparency = 0.5
         tween(main, {
@@ -1428,12 +1420,7 @@ function Velvet:CreateWindow(opts)
         }, 0.2)
         task.delay(0.22, function()
             main.Visible = false
-            -- skip the pill if an addon (e.g. QuickBar) suppresses it
-            if not self._pillSuppressed then
-                togglePill.Visible = true
-            else
-                togglePill.Visible = false
-            end
+            -- [แก้ไข] ไม่สั่งเปลี่ยน Visible ของ togglePill อีกต่อไป Icon จะลอยอยู่ตลอดเวลา
         end)
     end
 
